@@ -3,7 +3,7 @@ import {hexToHsv,hsvToHex} from './lib/color.mjs';
 const $=id=>document.getElementById(id);
 const labels={'undo-own':'Скасувати останній свій штрих','clear-own':'Стерти мої','toggle-others':'Приховати / показати чужі','toggle-drawing':'Перемкнути малювання','toggle-overlay':'Приховати / показати весь оверлей','question-ping':'Пінг ? під курсором'};
 let displays=[],prefs={},state={},editorIndex=0,hsv={h:0,s:0,v:1},recordingColor=false,platform='';
-const pretty=key=>key.replaceAll('Control','Ctrl').replaceAll('Meta',platform==='linux'?'Super':'Win').replace('CapsLock','Caps Lock').replaceAll('+',' + ');
+const pretty=key=>key.replaceAll('Control','Ctrl').replaceAll('Meta',platform==='macos'?'Cmd':platform==='linux'?'Super':'Win').replaceAll('Alt',platform==='macos'?'Option':'Alt').replace('CapsLock','Caps Lock').replaceAll('+',' + ');
 function icon(name){const el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.classList.add('icon');const use=document.createElementNS(el.namespaceURI,'use');use.setAttribute('href','#i-'+name);el.append(use);return el}
 async function invoke(name,data){
  const r=await window.ink.invoke(name,data);if(!r.ok){$('status').textContent=r.error;$('status').hidden=false;if($('settings-dialog').open)$('saved').textContent=r.error;if($('color-editor').matches(':popover-open'))$('color-error').textContent=r.error;return null}return r.value??true;
@@ -28,6 +28,12 @@ function update(s){
  $('others-label').textContent=s.showOthers?'Приховати чужі':'Показати чужі';$('others').setAttribute('aria-pressed',String(!s.showOthers));
  $('others-icon').setAttribute('href',s.showOthers?'#i-hide':'#i-eye');
  $('warning').hidden=!s.keyboardError;$('warning').textContent=s.keyboardError||'';
+ $('mac-input-permission').hidden=platform!=='macos'||s.inputAllowed!==false||!prefs.hotkeysEnabled;
+ if(!$('mac-input-permission').hidden&&!s.keyboardError){
+  $('warning').textContent='Для глобальних хоткеїв дозволь Puzzle Ink у «Приватність і безпека → Моніторинг вводу». Кнопки малювання працюють і без цього дозволу.';
+  $('warning').hidden=false;
+ }
+ document.querySelector('footer').hidden=platform==='macos';
  const host=s.hosting||{phase:'stopped',message:''};const active=['starting','running','stopping'].includes(host.phase);
  $('start-server').hidden=active||s.connected;$('stop-server').hidden=!active;$('stop-server').disabled=host.phase==='stopping';
  $('start-server').disabled=!!s.hostingUnavailable;$('start-server').title=s.hostingUnavailable||'';
@@ -139,4 +145,5 @@ for(const [id,command] of [['connect','connect'],['disconnect','disconnect'],['d
 $('pen').onclick=()=>invoke('save-settings',{tool:'pen'});$('pointer').onclick=()=>invoke('save-settings',{tool:'pointer'});$('ttl').onchange=()=>invoke('save-settings',{ttl:Number($('ttl').value)});
  $('question').onclick=async()=>{await invoke('save-settings',{tool:'question'});if(!state.drawing)await invoke('draw');};
 window.ink.on('state',update);window.ink.on('preferences',brush);
+$('mac-input-permission').onclick=()=>invoke('request-input');
 const initial=await invoke('init');if(initial){platform=initial.platform;displays=initial.displays;for(const d of displays){const o=document.createElement('option');o.value=d.id;o.textContent=`${d.label} · ${d.width} × ${d.height}`;$('display').append(o)}state=initial.state;brush(initial.preferences)}

@@ -2591,12 +2591,15 @@ dependencies = [
 
 [[package]]
 name = "puzzle-ink"
-version = "0.96.0"
+version = "0.96.1"
 dependencies = [
  "axum",
+ "core-foundation",
+ "core-graphics",
  "flate2",
  "futures-util",
  "hmac",
+ "objc2-app-kit",
  "serde_json",
  "sha2 0.10.9",
  "tauri",

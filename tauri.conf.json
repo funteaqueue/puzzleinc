@@ -1,11 +1,12 @@
 {
   "productName": "Puzzle Ink",
-  "version": "0.96.0",
+  "version": "0.96.1",
   "identifier": "art.critfail.puzzleink.pilot",
   "build": {
     "frontendDist": "frontend"
   },
   "app": {
+    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [
       {

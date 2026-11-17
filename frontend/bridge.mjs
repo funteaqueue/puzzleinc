@@ -30,9 +30,13 @@ if(overlay){
  const instanceId=secret(),edges=new HotkeyEdges(),store=new InkStore();
  let state={connected:false,connecting:false,syncing:false,drawing:false,overlayVisible:prefs.overlayVisible,showOthers:prefs.showOthers,selectedPreset:prefs.selectedPreset,participants:0,hosting:{phase:'stopped'},message:''};
  let ws,timer,deadline,author,aspect=16/9,readyOverlay=false,lastPing=-Infinity,modeQueue=Promise.resolve(),hostGeneration=0,hostTimer;
- const config=()=>{const d=info.displays.find(d=>d.id===prefs.displayId)||display;return {region:prefs.manual?prefs.region:containRect({x:0,y:0,width:d.width,height:d.height},aspect),participantId:author,...brush()};};
+ const config=()=>{const d=info.displays.find(d=>d.id===prefs.displayId)||display;return {region:prefs.manual?prefs.region:containRect({x:0,y:0,width:d.width,height:d.height},aspect),participantId:author,softwareCursor:info.platform==='macos',...brush()};};
  function brush(){return {tool:prefs.tool,ttl:prefs.ttl,color:prefs.presets[prefs.selectedPreset]}}
  function update(patch){Object.assign(state,patch);notify('state',{...state});post('state',state)}
+ if(info.platform==='macos'){
+  const refresh=async()=>update({inputAllowed:await native('input_permission',{request:false})});
+  await refresh();window.addEventListener('focus',refresh);
+ }
  function configureKeys(){edges.previous=null;const keys=new Set(MODIFIERS);for(const b of prefs.bindings)keys.add(parseKey(b.key).key);if(prefs.digitColors)for(const k of prefs.colorKeys)if(k)keys.add(parseKey(k).key);
  return native('set_keys',{keys:state.connected&&!state.syncing&&prefs.hotkeysEnabled?[...keys]:[]});}
 
@@ -100,7 +104,9 @@ if(overlay){
  case 'editing-shortcut':editingShortcut=data===true;return;
  case 'init':return {state,preferences:prefs,platform:info.platform,displays:info.displays};
  case 'connect':return connect();case 'disconnect':return disconnect('Від’єднано');
- case 'start-server':return startHost();case 'stop-server':return stopHost();
+ case 'request-input':if(info.platform==='macos')update({inputAllowed:await native('input_permission',{request:true})});return;
+ case 'start-server':if(info.platform!=='macos')return startHost();return;
+ case 'stop-server':if(info.platform!=='macos')return stopHost();return;
  case 'draw':case 'stop-draw':{const drawing=name==='draw'&&!state.drawing&&state.connected&&!state.syncing;if(drawing&&!prefs.overlayVisible){prefs.overlayVisible=true;persist()}update({drawing,overlayVisible:prefs.overlayVisible});return mode();}
  case 'toggle-overlay':prefs.overlayVisible=!prefs.overlayVisible;update({overlayVisible:prefs.overlayVisible,drawing:false});persist();return mode();
  case 'toggle-others':prefs.showOthers=!prefs.showOthers;update({showOthers:prefs.showOthers});persist();return;

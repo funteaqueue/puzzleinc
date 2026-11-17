@@ -1,17 +1,27 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod keys;
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(not(target_os = "macos"))]
 mod relay;
 use serde_json::{json, Value};
+#[cfg(not(target_os = "macos"))]
 use std::{
     process::{Child, Command, Stdio},
     sync::Mutex,
 };
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+#[cfg(not(target_os = "macos"))]
 use tokio::sync::watch;
+#[cfg(not(target_os = "macos"))]
 use uuid::Uuid;
 type Result<T> = std::result::Result<T, String>;
 fn personal() -> Value {
-    serde_json::from_str(include_str!("../.runtime/personal-session.json")).unwrap()
+    #[cfg(target_os = "macos")]
+    let config = include_str!("../.runtime/client-session.json");
+    #[cfg(not(target_os = "macos"))]
+    let config = include_str!("../.runtime/personal-session.json");
+    serde_json::from_str(config).unwrap()
 }
 fn panel(w: &WebviewWindow) -> Result<()> {
     if w.label() == "panel" {
@@ -33,7 +43,7 @@ fn startup(window: WebviewWindow) -> Result<Value> {
         .map(|port| format!("ws://127.0.0.1:{port}"))
         .unwrap_or_else(|| config["url"].as_str().unwrap().to_owned());
     Ok(
-        json!({"url":url,"accessKey":config["accessKey"],"displays":displays,"platform":if cfg!(windows){"win32"}else{"linux"}}),
+        json!({"url":url,"accessKey":config["accessKey"],"displays":displays,"platform":if cfg!(windows){"win32"}else{std::env::consts::OS}}),
     )
 }
 fn err(e: impl std::fmt::Display) -> String {
@@ -63,20 +73,27 @@ async fn overlay_mode(
     let w = if let Some(w) = app.get_webview_window("overlay") {
         w
     } else {
-        WebviewWindowBuilder::new(&app, "overlay", WebviewUrl::App("overlay.html".into()))
-            .title("Puzzle Ink Overlay")
-            .transparent(true)
-            .background_color(tauri::window::Color(0, 0, 0, 0))
-            .decorations(false)
-            .shadow(false)
-            .resizable(false)
-            .focused(false)
-            .focusable(false)
-            .skip_taskbar(true)
-            .always_on_top(true)
-            .visible(false)
-            .build()
-            .map_err(err)?
+        let builder =
+            WebviewWindowBuilder::new(&app, "overlay", WebviewUrl::App("overlay.html".into()))
+                .title("Puzzle Ink Overlay")
+                .transparent(true)
+                .background_color(tauri::window::Color(0, 0, 0, 0))
+                .decorations(false)
+                .shadow(false)
+                .resizable(false)
+                .focused(false)
+                .focusable(false)
+                .skip_taskbar(true)
+                .always_on_top(true)
+                .visible(false);
+        #[cfg(target_os = "macos")]
+        let builder = builder
+            .visible_on_all_workspaces(true)
+            .accept_first_mouse(true);
+        let overlay = builder.build().map_err(err)?;
+        #[cfg(target_os = "macos")]
+        macos::configure_overlay(&overlay).await?;
+        overlay
     };
     w.set_position(*mon.position()).map_err(err)?;
     w.set_size(*mon.size()).map_err(err)?;
@@ -107,6 +124,7 @@ fn pointer(window: WebviewWindow, display: usize) -> Result<(f64, f64)> {
         (p.y - m.position().y as f64) / m.scale_factor(),
     ))
 }
+#[cfg(not(target_os = "macos"))]
 struct Running {
     child: Child,
     stop: watch::Sender<bool>,
@@ -139,6 +157,7 @@ fn standalone_tunnel_runs_without_sidecar() {
     drop(dir);
     assert!(!helper.exists());
 }
+#[cfg(not(target_os = "macos"))]
 impl Drop for Running {
     fn drop(&mut self) {
         let _ = self.stop.send(true);
@@ -146,8 +165,10 @@ impl Drop for Running {
         let _ = self.child.wait();
     }
 }
+#[cfg(not(target_os = "macos"))]
 #[derive(Default)]
 struct Host(Mutex<Option<Running>>);
+#[cfg(not(target_os = "macos"))]
 #[tauri::command]
 async fn start_host(window: WebviewWindow, host: tauri::State<'_, Host>) -> Result<String> {
     panel(&window)?;
@@ -209,12 +230,14 @@ async fn start_host(window: WebviewWindow, host: tauri::State<'_, Host>) -> Resu
     ));
     Ok(id)
 }
+#[cfg(not(target_os = "macos"))]
 #[tauri::command]
 fn stop_host(window: WebviewWindow, host: tauri::State<Host>) -> Result<()> {
     panel(&window)?;
     host.0.lock().unwrap().take();
     Ok(())
 }
+#[cfg(not(target_os = "macos"))]
 #[tauri::command]
 fn host_alive(window: WebviewWindow, host: tauri::State<Host>) -> Result<bool> {
     panel(&window)?;
@@ -228,8 +251,10 @@ fn host_alive(window: WebviewWindow, host: tauri::State<Host>) -> Result<bool> {
     Ok(false)
 }
 fn main() {
-    tauri::Builder::default()
-        .manage(Host::default())
+    let builder = tauri::Builder::default();
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.manage(Host::default());
+    let builder = builder
         .manage(keys::Keys::default())
         .setup(|app| {
             keys::start(app.handle().clone());
@@ -237,20 +262,32 @@ fn main() {
         })
         .on_window_event(|w, e| {
             if w.label() == "panel" && matches!(e, tauri::WindowEvent::Destroyed) {
+                #[cfg(not(target_os = "macos"))]
                 w.state::<Host>().0.lock().unwrap().take();
                 w.app_handle().exit(0)
             }
-        })
-        .invoke_handler(tauri::generate_handler![
-            startup,
-            overlay_mode,
-            release_overlay,
-            pointer,
-            start_host,
-            stop_host,
-            host_alive,
-            keys::set_keys
-        ])
+        });
+    #[cfg(target_os = "macos")]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        startup,
+        overlay_mode,
+        release_overlay,
+        pointer,
+        keys::set_keys,
+        macos::input_permission
+    ]);
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        startup,
+        overlay_mode,
+        release_overlay,
+        pointer,
+        start_host,
+        stop_host,
+        host_alive,
+        keys::set_keys
+    ]);
+    builder
         .run(tauri::generate_context!())
         .expect("Puzzle Ink runtime");
 }

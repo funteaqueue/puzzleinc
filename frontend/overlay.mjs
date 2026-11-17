@@ -8,6 +8,7 @@ const cursor=document.getElementById('drawing-cursor');
 function positionCursor(point){
  const visible=drawing&&config?.softwareCursor&&point&&Number.isFinite(point.x)&&Number.isFinite(point.y);
  cursor.toggleAttribute('hidden',!visible);
+ if(config?.softwareCursor)canvas.style.cursor=visible?'none':'';
  if(visible)cursor.style.transform=`translate(${point.x-16}px,${point.y-16}px)`;
 }
 let config, drawing = false, showOthers = true, active = null, pending = [], overlayVisible = true, frameId = 0, wakeTimer = 0;
@@ -34,6 +35,10 @@ const controls=floatingControls(document.getElementById('hint'),document.getElem
 window.ink.on('configure', c => { config = c; invalidate();document.getElementById('cursor-color').setAttribute('fill',c.color);positionCursor(null); });
 window.ink.on('brush', c => { finish(); config = { ...config, ...c };document.getElementById('cursor-color').setAttribute('fill',c.color); });
 window.ink.on('cursor',positionCursor);
+canvas.addEventListener('pointermove', e=>{
+  if(config?.softwareCursor)positionCursor({x:e.clientX,y:e.clientY});
+});
+canvas.addEventListener('pointerleave', ()=>positionCursor(null));
 window.ink.on('state', s => {
   if (!s.drawing) finish();
   const redraw = drawing !== s.drawing || showOthers !== (s.showOthers !== false) || overlayVisible !== (s.overlayVisible !== false);

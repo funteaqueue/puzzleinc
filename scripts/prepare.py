@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import secrets
 import shutil
 import sys
@@ -13,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / ".runtime"
 TOKEN_NAMES = ("CLOUDFLARE_TUNNEL_TOKEN", "TUNNEL_TOKEN", "token")
+SESSION_URL = "wss://puzzleinc.critfail.art"
 
 
 def read_token(path):
@@ -33,13 +35,30 @@ def prepare_session():
     if not token or any(c.isspace() for c in token):
         sys.exit("Set TUNNEL_TOKEN in .env or in the environment before building.")
     config.setdefault("accessKey", secrets.token_hex(32))
-    config["url"] = "wss://puzzleinc.critfail.art"
+    config["url"] = SESSION_URL
     config["tunnelToken"] = token
     data = json.dumps(config, indent=2)
     if not path.exists() or path.read_text(encoding="utf-8") != data:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=RUNTIME, delete=False) as tmp:
             tmp.write(data)
         Path(tmp.name).replace(path)
+    return config["accessKey"]
+
+
+def prepare_client(access_key=None):
+    dest = RUNTIME / "client-session.json"
+    if not access_key:
+        access_key = os.environ.get("PUZZLE_INK_ACCESS_KEY")
+    for source in (dest, RUNTIME / "personal-session.json"):
+        if not access_key and source.is_file():
+            access_key = json.loads(source.read_text(encoding="utf-8-sig")).get("accessKey")
+    if not isinstance(access_key, str) or not re.fullmatch("[0-9a-f]{64}", access_key):
+        sys.exit("Copy .runtime/client-session.json from the session host or set PUZZLE_INK_ACCESS_KEY.")
+    data = json.dumps({"url": SESSION_URL, "accessKey": access_key}, indent=2)
+    if not dest.exists() or dest.read_text(encoding="utf-8-sig") != data:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=RUNTIME, delete=False) as tmp:
+            tmp.write(data)
+        Path(tmp.name).replace(dest)
 
 
 def download(url, dest, checksum=None):
@@ -55,10 +74,15 @@ def download(url, dest, checksum=None):
 
 
 def main():
+    if sys.platform == "darwin" and platform.machine() == "arm64":
+        RUNTIME.mkdir(exist_ok=True)
+        prepare_client()
+        print("Mac client configuration ready.")
+        return
     if sys.platform not in ("win32", "linux") or platform.machine().lower() not in ("amd64", "x86_64"):
-        sys.exit("Build on Windows x64 or Linux x86_64.")
+        sys.exit("Build on Windows x64, Linux x86_64 or Apple Silicon macOS.")
     RUNTIME.mkdir(exist_ok=True)
-    prepare_session()
+    prepare_client(prepare_session())
     release = json.loads(Path(__file__).with_name("cloudflared-release.json").read_text(encoding="utf-8"))
     windows = sys.platform == "win32"
     name = "cloudflared-windows-amd64.exe" if windows else "cloudflared-linux-amd64"

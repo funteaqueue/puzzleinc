@@ -1,7 +1,11 @@
-use std::{collections::BTreeMap, sync::Mutex, time::Duration};
-use tauri::{AppHandle, Manager, WebviewWindow};
+#[cfg(not(target_os = "macos"))]
+use std::time::Duration;
+use std::{collections::BTreeMap, sync::Mutex};
+use tauri::WebviewWindow;
+#[cfg(not(target_os = "macos"))]
+use tauri::{AppHandle, Manager};
 #[derive(Default)]
-pub struct Keys(Mutex<BTreeMap<String, u32>>);
+pub struct Keys(pub(crate) Mutex<BTreeMap<String, u32>>);
 #[tauri::command]
 pub fn set_keys(
     window: WebviewWindow,
@@ -10,7 +14,7 @@ pub fn set_keys(
 ) -> Result<(), String> {
     super::panel(&window)?;
     if keys.len() > 80 {
-        return Err("Забагато клавіш".into());
+        return Err("Ð—Ð°Ð±Ð°Ð³Ð°Ñ‚Ð¾ ÐºÐ»Ð°Ð²Ñ–Ñˆ".into());
     }
     *state.0.lock().unwrap() = keys
         .into_iter()
@@ -122,6 +126,7 @@ fn reader() -> impl FnMut(&BTreeMap<String, u32>) -> Vec<String> {
             .collect()
     }
 }
+#[cfg(not(target_os = "macos"))]
 pub fn start(app: AppHandle) {
     std::thread::spawn(move || {
         let mut read = reader();
@@ -150,3 +155,6 @@ pub fn start(app: AppHandle) {
         }
     });
 }
+
+#[cfg(target_os = "macos")]
+pub use crate::macos::start_keys as start;
