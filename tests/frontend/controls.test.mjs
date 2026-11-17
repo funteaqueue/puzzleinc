@@ -1,0 +1,21 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {HotkeyEdges,DEFAULT_COLOR_KEYS} from '../../frontend/lib/hotkeys.mjs';import {preferences,defaults,upgradeDrawingHotkeys} from '../../frontend/lib/preferences.mjs';import {hexToHsv,hsvToHex} from '../../frontend/lib/color.mjs';
+const base=()=>defaults('ws://localhost:1234',{id:1,bounds:{width:1920,height:1080}});
+test('Backspace migration respects existing shortcuts and color presets',()=>{
+ const p=base();
+ p.bindings=[];
+ p.colorKeys[0]='Backspace';
+ upgradeDrawingHotkeys(p);
+ assert.deepEqual(p.bindings,[]);
+ p.colorKeys[0]='1';
+ p.bindings=[{key:'Backspace',scope:'session',actions:['toggle-drawing']}];
+ upgradeDrawingHotkeys(p);
+ assert.deepEqual(p.bindings[0].actions,['toggle-drawing']);assert.equal(p.bindings.length,1);
+ p.bindings=[];
+ upgradeDrawingHotkeys(p);upgradeDrawingHotkeys(p);
+ assert.deepEqual(p.bindings,[{key:'Backspace',scope:'drawing',actions:['undo-own']}]);
+});
+test('color shortcuts can be remapped, disabled, and require exact modifiers',()=>{const e=new HotkeyEdges(),keys=[...DEFAULT_COLOR_KEYS];keys[0]='Control+F6';keys[1]='';const opts={bindings:[],enabled:true,drawing:true,digits:true,colorKeys:keys};const sample=a=>e.sample(new Set(a),opts);sample([]);assert.deepEqual(sample(['1']),[]);sample([]);assert.deepEqual(sample(['Control','F6']),['color-1']);assert.deepEqual(sample(['Control','F6']),[]);sample([]);assert.deepEqual(sample(['F6']),[]);sample([]);assert.deepEqual(sample(['2']),[]);sample([]);assert.deepEqual(sample(['3']),['color-3'])});
+test('full overlay toggle remains available outside drawing mode and runs after drawing actions',()=>{const e=new HotkeyEdges(),o={bindings:[{key:'F8',scope:'session',actions:['toggle-overlay','toggle-drawing']}],enabled:true,drawing:false,digits:true};e.sample(new Set(),o);assert.deepEqual(e.sample(new Set(['F8']),o),['toggle-drawing','toggle-overlay'])});
+test('preferences preserve old settings while adding color keys and overlay visibility',()=>{const p=preferences({presets:Array(9).fill('#123abc'),selectedPreset:4},base());assert.deepEqual(p.colorKeys,DEFAULT_COLOR_KEYS);assert.equal(p.overlayVisible,true);assert.equal(p.selectedPreset,4);assert.equal(preferences({overlayVisible:false},p).overlayVisible,false);assert.throws(()=>preferences({colorKeys:Array(9).fill('F1')},p),/окрема клавіша/);assert.throws(()=>preferences({colorKeys:['F99',...DEFAULT_COLOR_KEYS.slice(1)]},p))});
+test('color picker round trips preset colors including grayscale and hue boundaries',()=>{for(const hex of ['#000000','#ffffff','#123abc','#6ef0b5','#65b8ff','#c694ff','#ff0000','#00ff00','#0000ff','#808080'])assert.equal(hsvToHex(hexToHsv(hex)),hex);assert.equal(hsvToHex({h:0,s:1,v:1}),'#ff0000');assert.equal(hsvToHex({h:120,s:1,v:1}),'#00ff00')});

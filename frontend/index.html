@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="uk"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Puzzle Ink</title><link rel="stylesheet" href="style.css">
+</head><body>
+<svg class="icon-defs" aria-hidden="true"><defs>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="m16 3 5 5-12 12-6 1 1-6Z M13 6l5 5 M4 15l5 5"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-hide" viewBox="0 0 24 24"><path d="m3 3 18 18M10 5c7-1 12 7 12 7l-3 4M6 6c-2 2-4 6-4 6s4 7 10 7c2 0 4-1 5-2M10 10a3 3 0 0 0 4 4"/></symbol>
+<symbol id="i-erase" viewBox="0 0 24 24"><path d="m14 3 7 7-10 11H6l-4-5Z M7 11l7 7M11 21h11"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><path d="m9 3-1 3-3 1-2 3 2 2-1 4 3 2 3-1 2 4 3-1 1-3 3-1 2-3-2-2 1-4-3-2-3 1-2-3Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M6 19a5 5 0 0 1-1-10 7 7 0 0 1 13-2 6 6 0 0 1 0 12Z"/></symbol>
+<symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M2 21v-3a7 7 0 0 1 14 0v3ZM16 4a3 3 0 0 1 0 6M18 14c3 1 4 3 4 7"/></symbol>
+<symbol id="i-question" viewBox="0 0 24 24"><path d="M8 8a4 4 0 1 1 6 3.5c-2 1-2 2-2 3.5M12 19h.01"/></symbol>
+<symbol id="i-pointer" viewBox="0 0 24 24"><path d="m5 3 15 10-7 1-3 7Z"/></symbol>
+<symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M5 9h2m2 0h2m2 0h2m2 0h2M5 12h2m2 0h2m2 0h2m2 0h2M7 16h10"/></symbol>
+</defs></svg>
+<main>
+<header class="app-header"><div class="brand"><svg class="icon"><use href="#i-pen"/></svg><strong>Puzzle Ink</strong></div><button id="open-settings" class="icon-button" title="Налаштування" aria-label="Налаштування"><svg class="icon"><use href="#i-gear"/></svg></button></header>
+<div class="connection"><span id="connection-dot" class="dot"></span><span id="connection-label">Підключення…</span><span class="separator"></span><svg class="icon"><use href="#i-people"/></svg><span id="peer">—</span><button id="connect" class="text-button">Підключитися</button><button id="disconnect" class="text-button" hidden>Від’єднатись</button></div>
+<p id="status" class="notice" role="status" hidden></p>
+<section class="overlay-section"><button id="toggle-overlay" class="overlay-control" role="switch" aria-checked="true"><svg class="icon"><use id="overlay-icon" href="#i-eye"/></svg><strong id="overlay-label">Оверлей увімкнено</strong><span class="switch" aria-hidden="true"></span><kbd id="overlay-key">F8</kbd></button><p id="overlay-help" class="hint">Приховати все та вимкнути малювання</p></section>
+<button id="draw" class="draw-button" disabled><svg class="icon"><use href="#i-pen"/></svg><strong id="draw-label">Почати малювання</strong><kbd id="draw-key">Caps Lock</kbd></button>
+<p id="draw-help" class="hint key-description">Caps Lock: стерти свої + перемкнути малювання</p>
+<div class="secondary-actions"><button id="clear" disabled><svg class="icon"><use href="#i-erase"/></svg>Стерти мої</button><button id="others"><svg class="icon"><use id="others-icon" href="#i-hide"/></svg><span id="others-label">Приховати чужі</span></button></div>
+<p class="hint centered">Чужі малюнки приховуються тільки для тебе</p>
+<section class="colors"><div class="section-heading"><strong>Колір</strong><span id="color-save-status" aria-live="polite"></span></div><div id="palette" class="palette" aria-label="Пресети кольорів"></div><p class="hint">Клік — вибір · ПКМ / олівець — редагування · клавіша — змінити хоткей</p></section>
+<div class="brush-controls"><div class="segmented" aria-label="Інструмент"><button id="pen" aria-pressed="true"><svg class="icon"><use href="#i-pen"/></svg>Пензель</button><button id="pointer" aria-pressed="false"><svg class="icon"><use href="#i-pointer"/></svg>Вказівник</button><button id="question" aria-pressed="false" title="Вибрати пінг ? і поставити його кліком"><svg class="icon"><use href="#i-question"/></svg>Пінг ?</button></div><select id="ttl" aria-label="Зберігати позначки"><option value="0">До очищення</option><option value="2000">2 секунди</option><option value="5000">5 секунд</option><option value="10000">10 секунд</option></select></div>
+<p id="ping-help" class="hint">G — пінг ? під курсором під час малювання. Жовтий знак зникає через 2 секунди.</p>
+<button id="open-hotkeys" class="settings-link">Клавіші та налаштування <span aria-hidden="true">›</span></button>
+<p id="warning" class="notice warning" hidden></p>
+<footer><div class="server-row"><svg class="icon"><use href="#i-cloud"/></svg><span id="server-label">Сервер не запущено</span><span id="host-dot" class="dot"></span><button id="start-server">Запустити сервер</button><button id="stop-server" hidden>Зупинити</button></div><p id="host-status" class="hint" role="status"></p></footer>
+</main>
+<div id="color-editor" popover aria-label="Редагування кольору"><div class="popover-header"><strong id="color-title">Колір 1</strong><button id="close-color" class="icon-button" aria-label="Закрити редактор">×</button></div><div id="sv" class="sv" role="group" aria-label="Насиченість і яскравість"><span id="sv-cursor"></span></div><input id="hue" type="range" min="0" max="359" step="1" aria-label="Відтінок"><label class="hex-label"><span id="color-preview"></span><input id="hex" type="text" maxlength="7" spellcheck="false" aria-label="HEX кольору"></label><label>Клавіша кольору<div class="key-input"><input id="color-key" type="text" placeholder="Без клавіші" spellcheck="false" aria-label="Клавіша кольору"><button id="record-color-key" class="icon-button" title="Записати клавішу" aria-label="Записати клавішу"><svg class="icon"><use href="#i-keyboard"/></svg></button></div></label><p id="color-key-help" class="hint">Лише під час малювання. Зміни зберігаються одразу.</p><p id="color-error" class="warning" aria-live="polite"></p></div>
+<dialog id="settings-dialog"><form id="settings"><div class="dialog-header"><h2>Налаштування</h2><button id="close-settings" type="button" class="icon-button" aria-label="Закрити налаштування">×</button></div><div class="dialog-content">
+<h3>Гарячі клавіші</h3><label class="check"><input id="hotkeys" type="checkbox"> Увімкнути хоткеї</label><div id="bindings"></div><button id="add-binding" type="button">+ Додати хоткей</button>
+<label class="check spaced"><input id="digits" type="checkbox"> Хоткеї кольорів під час малювання</label><p class="hint">Клавішу кожного кольору можна змінити прямо під палітрою.</p><p class="hint">Клавіші зберігають звичайну дію у грі. Хоткеї працюють і в панелі Puzzle Ink. Пауза діє лише під час призначення клавіші дії або кольору. Одна клавіша може виконувати кілька дій; приховування всього оверлею виконується останнім.</p>
+<details><summary>Монітор та підключення</summary><label class="check spaced"><input id="auto-connect" type="checkbox"> Підключатися автоматично</label><label>Монітор<select id="display"></select></label><label class="check"><input id="manual" type="checkbox"> Задати область вручну</label><div id="region" class="region" hidden><label>X<input id="x" type="number" min="0"></label><label>Y<input id="y" type="number" min="0"></label><label>Ширина<input id="width" type="number" min="32"></label><label>Висота<input id="height" type="number" min="32"></label></div><p class="hint">Типово область 16:9 вписується по центру монітора.</p><label>Адреса сервера<input id="url" type="text" spellcheck="false" required></label></details>
+</div><div class="dialog-footer"><p id="saved" role="status"></p><button type="submit" class="primary">Зберегти</button></div></form></dialog>
+<script type="module" src="bridge.mjs"></script></body></html>

@@ -1,0 +1,29 @@
+{
+  "productName": "Puzzle Ink",
+  "version": "0.96.0",
+  "identifier": "art.critfail.puzzleink.pilot",
+  "build": {
+    "frontendDist": "frontend"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "panel",
+        "title": "Puzzle Ink",
+        "url": "index.html",
+        "width": 670,
+        "height": 780
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost wss://puzzleinc.critfail.art ws://127.0.0.1:*"
+    }
+  },
+  "bundle": {
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
+  }
+}

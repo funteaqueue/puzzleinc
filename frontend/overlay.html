@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="UTF-8">
+
+<title>Puzzle Ink overlay</title><link rel="stylesheet" href="overlay.css"></head>
+<body><canvas id="ink"></canvas>
+<div id="hint" role="group" aria-label="Керування малюванням" hidden>
+  <span id="controls-grip" title="Перетягнути панель" aria-label="Перетягнути панель"><svg width="12" height="18" viewBox="0 0 12 18" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="4" r="1.2"/><circle cx="8" cy="4" r="1.2"/><circle cx="4" cy="9" r="1.2"/><circle cx="8" cy="9" r="1.2"/><circle cx="4" cy="14" r="1.2"/><circle cx="8" cy="14" r="1.2"/></g></svg></span>
+  <button id="clear-own" type="button" aria-label="Стерти мої малюнки" title="Стерти мої малюнки для всіх учасників"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m9 17-5-5a2 2 0 0 1 0-3l6-6a2 2 0 0 1 3 0l7 7a2 2 0 0 1 0 3l-7 7H9l-4-4M8 8l9 9M13 20h9"/></svg></button>
+  <button id="stop" type="button" aria-label="Завершити малювання" title="Завершити малювання й повернути керування мишею"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+</div>
+<svg id="drawing-cursor" aria-hidden="true" hidden width="32" height="32" viewBox="-16 -16 32 32"><g fill="none" stroke="#111820" stroke-width="4"><circle r="7"/><path d="M-14 0h5M14 0H9M0-14v5M0 14V9"/></g><g fill="none" stroke="#fff" stroke-width="2"><circle r="7"/><path d="M-14 0h5M14 0H9M0-14v5M0 14V9"/></g><circle id="cursor-color" r="2" fill="#6ef0b5"/></svg>
+<script type="module" src="bridge.mjs"></script></body></html>
